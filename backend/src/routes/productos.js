@@ -2,68 +2,67 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// 📥 OBTENER TODOS
+// 📥 Obtener todos
 router.get('/', async (req, res) => {
   try {
-    const resultado = await db.query('SELECT * FROM productos ORDER BY id DESC');
-    res.json(resultado.rows);
+    const { rows } = await db.query('SELECT * FROM productos ORDER BY id DESC');
+    res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: '❌ Error al obtener los productos' });
+    res.status(500).json({ error: 'Error al obtener: ' + err.message });
   }
 });
 
-// 🔍 OBTENER UNO SOLO
-router.get('/:id', async (req, res) => {
-  try {
-    const resultado = await db.query('SELECT * FROM productos WHERE id = $1', [req.params.id]);
-    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado' });
-    res.json(resultado.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: '❌ Error al buscar' });
-  }
-});
-
-// ✏️ CREAR NUEVO
+// ➕ Crear nuevo
 router.post('/', async (req, res) => {
   const { nombre, precio, categoria, stock } = req.body;
+  
   if (!nombre || !precio || !categoria) {
-    return res.status(400).json({ error: '⚠️ Faltan campos obligatorios' });
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
   try {
-    const resultado = await db.query(
-      'INSERT INTO productos (nombre, precio, categoria, stock) VALUES ($1, $2, $3, $4) RETURNING *',
+    const { rows } = await db.query(
+      `INSERT INTO productos (nombre, precio, categoria, stock)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
       [nombre, precio, categoria, stock || 0]
     );
-    res.status(201).json(resultado.rows[0]);
+    res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: '❌ Error al crear: ' + err.message });
+    res.status(500).json({ error: 'Error al guardar: ' + err.message });
   }
 });
 
-// ♻️ ACTUALIZAR
+// ✏️ Actualizar
 router.put('/:id', async (req, res) => {
+  const { id } = req.params;
   const { nombre, precio, categoria, stock } = req.body;
+
   try {
-    const resultado = await db.query(
-      'UPDATE productos SET nombre=$1, precio=$2, categoria=$3, stock=$4 WHERE id=$5 RETURNING *',
-      [nombre, precio, categoria, stock, req.params.id]
+    const { rows } = await db.query(
+      `UPDATE productos 
+       SET nombre=$1, precio=$2, categoria=$3, stock=$4 
+       WHERE id=$5 
+       RETURNING *`,
+      [nombre, precio, categoria, stock, id]
     );
-    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado para actualizar' });
-    res.json(resultado.rows[0]);
+    
+    if (rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+    res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: '❌ Error al actualizar' });
+    res.status(500).json({ error: 'Error al actualizar: ' + err.message });
   }
 });
 
-// 🗑️ ELIMINAR
+// 🗑️ Eliminar
 router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    const resultado = await db.query('DELETE FROM productos WHERE id = $1 RETURNING *', [req.params.id]);
-    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado para eliminar' });
-    res.json({ mensaje: '🗑️ Eliminado correctamente', id: req.params.id });
+    const { rows } = await db.query('DELETE FROM productos WHERE id = $1 RETURNING *', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ mensaje: 'Eliminado', dato: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: '❌ Error al eliminar' });
+    res.status(500).json({ error: 'Error al eliminar: ' + err.message });
   }
 });
 

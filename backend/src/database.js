@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// ✅ CONEXIÓN CON TUS DATOS DE RENDER (POSTGRES)
+// ✅ TUS DATOS EXACTOS DE LA BASE DE DATOS
 const pool = new Pool({
   host: 'dpg-d8bim099rddc73ccc66g-a',
   port: 5432,
@@ -9,32 +9,32 @@ const pool = new Pool({
   user: 'crud_db_productos_user',
   password: 'VadYnJKbWuAJOS9y1i6p7v9tHpm4qVzJ',
   ssl: {
-    rejectUnauthorized: false // 🔑 Obligatorio para que funcione en Render
+    rejectUnauthorized: false
   }
 });
 
-// ✅ CREAR TABLA AUTOMÁTICAMENTE SI NO EXISTE
-const crearTabla = async () => {
+// ✅ CREACIÓN DE TABLA SEGURA (SOLO SE CREA UNA VEZ)
+const initDB = async () => {
   const client = await pool.connect();
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS productos (
         id SERIAL PRIMARY KEY,
-        nombre TEXT NOT NULL,
-        precio NUMERIC NOT NULL,
-        categoria TEXT NOT NULL,
+        nombre VARCHAR(255) NOT NULL,
+        precio NUMERIC(10,2) NOT NULL,
+        categoria VARCHAR(100) NOT NULL,
         stock INTEGER NOT NULL DEFAULT 0,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Base de Datos Conectada y Tabla Lista');
+    console.log('✅ Base de datos inicializada correctamente');
   } catch (err) {
-    console.error('❌ Error al inicializar la BD:', err.message);
+    console.error('❌ Error BD:', err.message);
   } finally {
     client.release();
   }
 };
 
-crearTabla();
+initDB();
 
 module.exports = pool;
