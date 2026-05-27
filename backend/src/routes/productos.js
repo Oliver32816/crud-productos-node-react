@@ -2,58 +2,69 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// GET todos
-router.get('/', (req, res) => {
-  db.all('SELECT * FROM productos ORDER BY id DESC', [], (err, filas) => {
-    if (err) return res.status(500).json({ error: 'Error al obtener' });
-    res.json(filas);
-  });
+// 📥 OBTENER TODOS
+router.get('/', async (req, res) => {
+  try {
+    const resultado = await db.query('SELECT * FROM productos ORDER BY id DESC');
+    res.json(resultado.rows);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Error al obtener los productos' });
+  }
 });
 
-// GET uno solo
-router.get('/:id', (req, res) => {
-  db.get('SELECT * FROM productos WHERE id = ?', [req.params.id], (err, fila) => {
-    if (err) return res.status(500).json({ error: 'Error al buscar' });
-    if (!fila) return res.status(404).json({ error: 'No encontrado' });
-    res.json(fila);
-  });
+// 🔍 OBTENER UNO SOLO
+router.get('/:id', async (req, res) => {
+  try {
+    const resultado = await db.query('SELECT * FROM productos WHERE id = $1', [req.params.id]);
+    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado' });
+    res.json(resultado.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Error al buscar' });
+  }
 });
 
-// POST crear
-router.post('/', (req, res) => {
+// ✏️ CREAR NUEVO
+router.post('/', async (req, res) => {
   const { nombre, precio, categoria, stock } = req.body;
-  if (!nombre || !precio || !categoria) 
-    return res.status(400).json({ error: 'Faltan campos' });
+  if (!nombre || !precio || !categoria) {
+    return res.status(400).json({ error: '⚠️ Faltan campos obligatorios' });
+  }
 
-  const sql = 'INSERT INTO productos (nombre, precio, categoria, stock) VALUES (?, ?, ?, ?)';
-  db.run(sql, [nombre, precio, categoria, stock || 0], function(err) {
-    if (err) return res.status(500).json({ error: 'Error al crear' });
-    db.get('SELECT * FROM productos WHERE id = ?', [this.lastID], (err, nuevo) => {
-      res.status(201).json(nuevo);
-    });
-  });
+  try {
+    const resultado = await db.query(
+      'INSERT INTO productos (nombre, precio, categoria, stock) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nombre, precio, categoria, stock || 0]
+    );
+    res.status(201).json(resultado.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Error al crear: ' + err.message });
+  }
 });
 
-// PUT actualizar
-router.put('/:id', (req, res) => {
+// ♻️ ACTUALIZAR
+router.put('/:id', async (req, res) => {
   const { nombre, precio, categoria, stock } = req.body;
-  const sql = 'UPDATE productos SET nombre=?, precio=?, categoria=?, stock=? WHERE id=?';
-  db.run(sql, [nombre, precio, categoria, stock, req.params.id], function(err) {
-    if (err) return res.status(500).json({ error: 'Error al actualizar' });
-    if (this.changes === 0) return res.status(404).json({ error: 'No encontrado' });
-    db.get('SELECT * FROM productos WHERE id = ?', [req.params.id], (err, prod) => {
-      res.json(prod);
-    });
-  });
+  try {
+    const resultado = await db.query(
+      'UPDATE productos SET nombre=$1, precio=$2, categoria=$3, stock=$4 WHERE id=$5 RETURNING *',
+      [nombre, precio, categoria, stock, req.params.id]
+    );
+    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado para actualizar' });
+    res.json(resultado.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Error al actualizar' });
+  }
 });
 
-// DELETE eliminar
-router.delete('/:id', (req, res) => {
-  db.run('DELETE FROM productos WHERE id = ?', [req.params.id], function(err) {
-    if (err) return res.status(500).json({ error: 'Error al eliminar' });
-    if (this.changes === 0) return res.status(404).json({ error: 'No encontrado' });
-    res.json({ mensaje: 'Eliminado', id: req.params.id });
-  });
+// 🗑️ ELIMINAR
+router.delete('/:id', async (req, res) => {
+  try {
+    const resultado = await db.query('DELETE FROM productos WHERE id = $1 RETURNING *', [req.params.id]);
+    if (resultado.rows.length === 0) return res.status(404).json({ error: '🔍 No encontrado para eliminar' });
+    res.json({ mensaje: '🗑️ Eliminado correctamente', id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Error al eliminar' });
+  }
 });
 
 module.exports = router;

@@ -5,13 +5,12 @@ require('dotenv').config();
 const productosRouter = require('./routes/productos');
 const app = express();
 
-// ✅ CONFIGURACIÓN DE PUERTO CORRECTA PARA RENDER
+// ⚙️ CONFIGURACIÓN
 const PORT = process.env.PORT || 3001;
-const HOST = '0.0.0.0'; // 👈 ESTO ES LO QUE FALTABA PARA QUE FUNCIONE EN LA NUBE
+const HOST = '0.0.0.0';
+const FRONTEND_URL = 'https://crud-productos-node-react.vercel.app';
 
-// ✅ CORS CONFIGURACIÓN PERFECTA
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://crud-productos-node-react.vercel.app';
-
+// 🛡️ SEGURIDAD Y CONEXIÓN CRUZADA
 app.use(cors({
   origin: [FRONTEND_URL, 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -20,17 +19,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ RUTA PRINCIPAL (para que NO salga "No se puede OBTENER /")
+// 📄 RUTA DE PRUEBA
 app.get('/', (req, res) => {
-  res.json({ mensaje: '✅ Servidor CRUD funcionando correctamente', estado: 'activo' });
+  res.json({ mensaje: '✅ Servidor CRUD funcionando con Base de Datos Permanente', estado: 'activo' });
 });
 
-// Rutas de la API
+// 📦 RUTAS DE LA API
 app.use('/api/productos', productosRouter);
 
-// Iniciar servidor
-app.listen(PORT, HOST, () => { // 👈 Aquí usamos el HOST correcto
-  console.log(`✅ Servidor corriendo correctamente`);
-  console.log(`🔗 URL: https://crud-productos-node-react.onrender.com`);
-  console.log(`🚪 Puerto: ${PORT}`);
+// 🚀 INICIAR SERVIDOR
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Servidor corriendo en puerto: ${PORT}`);
+  console.log(`🔗 Conectado a: ${FRONTEND_URL}`);
 });

@@ -1,24 +1,40 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-// Ruta corregida para que funcione en Render y local
-const dbPath = path.resolve(__dirname, '../productos.db');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error('❌ Error BD:', err.message);
-  else console.log('✅ Conectado a la base de datos SQLite');
+// ✅ CONEXIÓN CON TUS DATOS DE RENDER (POSTGRES)
+const pool = new Pool({
+  host: 'dpg-d8bim099rddc73ccc66g-a',
+  port: 5432,
+  database: 'crud_db_productos',
+  user: 'crud_db_productos_user',
+  password: 'VadYnJKbWuAJOS9y1i6p7v9tHpm4qVzJ',
+  ssl: {
+    rejectUnauthorized: false // 🔑 Obligatorio para que funcione en Render
+  }
 });
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS productos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    precio REAL NOT NULL,
-    categoria TEXT NOT NULL,
-    stock INTEGER NOT NULL DEFAULT 0,
-    createdAt TEXT DEFAULT (datetime('now'))
-  )
-`);
+// ✅ CREAR TABLA AUTOMÁTICAMENTE SI NO EXISTE
+const crearTabla = async () => {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS productos (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        precio NUMERIC NOT NULL,
+        categoria TEXT NOT NULL,
+        stock INTEGER NOT NULL DEFAULT 0,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Base de Datos Conectada y Tabla Lista');
+  } catch (err) {
+    console.error('❌ Error al inicializar la BD:', err.message);
+  } finally {
+    client.release();
+  }
+};
 
-module.exports = db;
+crearTabla();
+
+module.exports = pool;
