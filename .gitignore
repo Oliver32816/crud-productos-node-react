@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+*/node_modules/
+
+# Entornos y secretos
+.env
+.env.*
+
+# Archivos de base de datos
+*.db
+*.db-journal
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de desarrollo
+dist/
+build/
+.vite/
+.cache/
