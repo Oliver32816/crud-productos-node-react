@@ -2,14 +2,12 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 require('dotenv').config();
 
-// Ruta para que funcione en Render y local
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? path.join('/opt/render/project/src/backend', 'productos.db') 
-  : path.resolve('./productos.db');
+// Ruta corregida para que funcione en Render y local
+const dbPath = path.resolve(__dirname, '../productos.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) console.error('❌ Error BD:', err.message);
-  else console.log('✅ Conectado a SQLite');
+  else console.log('✅ Conectado a la base de datos SQLite');
 });
 
 db.exec(`
